@@ -58,7 +58,6 @@ void aes_encrypt_blocks(const std::vector<unsigned char>& plaintext, const std::
     size_t block_count = (plaintext.size() + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE;
     std::vector<unsigned char> ciphertext(block_count * AES_BLOCK_SIZE);
 
-    std::cout << "Количество блоков: " << block_count << std::endl;
 
     // Замер общего времени шифрования
     auto total_start = std::chrono::high_resolution_clock::now();
@@ -83,6 +82,7 @@ void aes_encrypt_blocks(const std::vector<unsigned char>& plaintext, const std::
     auto total_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> total_elapsed = total_end - total_start;
     std::cout << "Общее время шифрования: " << total_elapsed.count() << " секунд" << std::endl;
+    std::cout << "Количество блоков: " << block_count << std::endl;
 
     // Запись зашифрованных данных в файл
     std::ofstream outfile("output.bin", std::ios::binary);
