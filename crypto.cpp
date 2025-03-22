@@ -73,7 +73,7 @@ void aes_encrypt_blocks(const std::vector<unsigned char>& plaintext, const std::
 
         AES_cbc_encrypt(block.data(), ciphertext.data() + block_start, AES_BLOCK_SIZE, &aes_key, iv.data(), AES_ENCRYPT);
 
-        auto end = std::chrono::high_resolution_clock::now();
+        // auto end = std::chrono::high_resolution_clock::now();
         // std::chrono::duration<double> elapsed = end - start;
         // std::cout << "Время шифрования блока " << i + 1 << ": " << elapsed.count() << " секунд" << std::endl;
     }
