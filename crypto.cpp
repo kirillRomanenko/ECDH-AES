@@ -63,7 +63,7 @@ void aes_encrypt_blocks(const std::vector<unsigned char>& plaintext, const std::
     auto total_start = std::chrono::high_resolution_clock::now();
 
     for (size_t i = 0; i < block_count; ++i) {
-        auto start = std::chrono::high_resolution_clock::now();
+        // auto start = std::chrono::high_resolution_clock::now();
 
         size_t block_start = i * AES_BLOCK_SIZE;
         size_t block_size = std::min(static_cast<size_t>(AES_BLOCK_SIZE), plaintext.size() - block_start);
@@ -74,8 +74,8 @@ void aes_encrypt_blocks(const std::vector<unsigned char>& plaintext, const std::
         AES_cbc_encrypt(block.data(), ciphertext.data() + block_start, AES_BLOCK_SIZE, &aes_key, iv.data(), AES_ENCRYPT);
 
         auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << "Время шифрования блока " << i + 1 << ": " << elapsed.count() << " секунд" << std::endl;
+        // std::chrono::duration<double> elapsed = end - start;
+        // std::cout << "Время шифрования блока " << i + 1 << ": " << elapsed.count() << " секунд" << std::endl;
     }
 
     // Замер общего времени шифрования
