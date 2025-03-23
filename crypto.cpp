@@ -1,6 +1,5 @@
 #include <openssl/ec.h>
 #include <openssl/ecdh.h>
-#include <openssl/aes.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
@@ -49,44 +48,53 @@ std::vector<unsigned char> compute_shared_secret(EC_KEY *private_key, const EC_P
 
 // Функция для шифрования данных по блокам с использованием AES
 void aes_encrypt_blocks(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& key) {
-    AES_KEY aes_key;
-    AES_set_encrypt_key(key.data(), 256, &aes_key);
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        std::cerr << "Ошибка создания контекста шифрования" << std::endl;
+        return;
+    }
 
-    std::vector<unsigned char> iv(AES_BLOCK_SIZE);
-    RAND_bytes(iv.data(), AES_BLOCK_SIZE);
+    std::vector<unsigned char> iv(EVP_CIPHER_iv_length(EVP_aes_256_cbc()));
+    RAND_bytes(iv.data(), iv.size());
 
-    size_t block_count = (plaintext.size() + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE;
-    std::vector<unsigned char> ciphertext(block_count * AES_BLOCK_SIZE);
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1) {
+        std::cerr << "Ошибка инициализации шифрования" << std::endl;
+        EVP_CIPHER_CTX_free(ctx);
+        return;
+    }
 
+    std::vector<unsigned char> ciphertext(plaintext.size() + EVP_CIPHER_CTX_block_size(ctx));
+    int len;
+    int ciphertext_len;
 
     // Замер общего времени шифрования
     auto total_start = std::chrono::high_resolution_clock::now();
 
-    for (size_t i = 0; i < block_count; ++i) {
-        // auto start = std::chrono::high_resolution_clock::now();
-
-        size_t block_start = i * AES_BLOCK_SIZE;
-        size_t block_size = std::min(static_cast<size_t>(AES_BLOCK_SIZE), plaintext.size() - block_start);
-
-        std::vector<unsigned char> block(AES_BLOCK_SIZE, 0);
-        std::copy(plaintext.begin() + block_start, plaintext.begin() + block_start + block_size, block.begin());
-
-        AES_cbc_encrypt(block.data(), ciphertext.data() + block_start, AES_BLOCK_SIZE, &aes_key, iv.data(), AES_ENCRYPT);
-
-        // auto end = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<double> elapsed = end - start;
-        // std::cout << "Время шифрования блока " << i + 1 << ": " << elapsed.count() << " секунд" << std::endl;
+    if (EVP_EncryptUpdate(ctx, ciphertext.data(), &len, plaintext.data(), plaintext.size()) != 1) {
+        std::cerr << "Ошибка шифрования данных" << std::endl;
+        EVP_CIPHER_CTX_free(ctx);
+        return;
     }
+    ciphertext_len = len;
+
+    if (EVP_EncryptFinal_ex(ctx, ciphertext.data() + len, &len) != 1) {
+        std::cerr << "Ошибка завершения шифрования" << std::endl;
+        EVP_CIPHER_CTX_free(ctx);
+        return;
+    }
+    ciphertext_len += len;
 
     // Замер общего времени шифрования
     auto total_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> total_elapsed = total_end - total_start;
     std::cout << "Общее время шифрования: " << total_elapsed.count() << " секунд" << std::endl;
-    std::cout << "Количество блоков: " << block_count << std::endl;
+
+    EVP_CIPHER_CTX_free(ctx);
 
     // Запись зашифрованных данных в файл
     std::ofstream outfile("output.bin", std::ios::binary);
-    outfile.write(reinterpret_cast<char*>(ciphertext.data()), ciphertext.size());
+    outfile.write(reinterpret_cast<char*>(iv.data()), iv.size()); // Записываем IV в начало файла
+    outfile.write(reinterpret_cast<char*>(ciphertext.data()), ciphertext_len);
     outfile.close();
 }
 
